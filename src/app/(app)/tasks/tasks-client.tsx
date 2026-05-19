@@ -14,7 +14,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, CheckCircle2, Circle, AlertCircle, Calendar, User } from 'lucide-react'
+import { Plus, CheckCircle2, Circle, Calendar, User } from 'lucide-react'
+import { useLanguage } from '@/lib/language-context'
 
 interface Props {
   initialTasks: (Task & { assignee?: Pick<Profile, 'id' | 'full_name'> | null; leads?: { id: string; full_name: string } | null })[]
@@ -28,6 +29,7 @@ const emptyForm = { title: '', description: '', assigned_to: '', due_date: '', l
 
 export function TasksClient({ initialTasks, leads, profiles, currentUserId, currentUserRole }: Props) {
   const supabase = createClient()
+  const { t } = useLanguage()
   const [tasks, setTasks] = useState(initialTasks)
   const [tab, setTab] = useState('all')
   const [modalOpen, setModalOpen] = useState(false)
@@ -37,10 +39,10 @@ export function TasksClient({ initialTasks, leads, profiles, currentUserId, curr
   const now = new Date()
 
   const filtered = useMemo(() => {
-    return tasks.filter(t => {
-      if (tab === 'mine') return t.assigned_to === currentUserId
-      if (tab === 'overdue') return !t.completed && t.due_date && new Date(t.due_date) < now
-      if (tab === 'pending') return !t.completed
+    return tasks.filter(task => {
+      if (tab === 'mine') return task.assigned_to === currentUserId
+      if (tab === 'overdue') return !task.completed && task.due_date && new Date(task.due_date) < now
+      if (tab === 'pending') return !task.completed
       return true
     })
   }, [tasks, tab, currentUserId])
@@ -48,13 +50,13 @@ export function TasksClient({ initialTasks, leads, profiles, currentUserId, curr
   const toggleComplete = async (id: string, completed: boolean) => {
     const { error } = await supabase.from('tasks').update({ completed: !completed }).eq('id', id)
     if (error) { toast.error(error.message) } else {
-      setTasks(prev => prev.map(t => t.id === id ? { ...t, completed: !completed } : t))
-      toast.success(completed ? 'Task reopened' : 'Task completed!')
+      setTasks(prev => prev.map(task => task.id === id ? { ...task, completed: !completed } : task))
+      toast.success(completed ? t.tasks.taskReopened : t.tasks.taskCompleted)
     }
   }
 
   const handleSave = async () => {
-    if (!form.title.trim()) { toast.error('Title is required'); return }
+    if (!form.title.trim()) { toast.error(t.tasks.titleRequired); return }
     setSaving(true)
     const payload = {
       ...form,
@@ -68,7 +70,7 @@ export function TasksClient({ initialTasks, leads, profiles, currentUserId, curr
     if (error) { toast.error(error.message) } else {
       setTasks(prev => [data, ...prev])
       await supabase.from('activities').insert({ type: 'task_created', description: `Task created: ${form.title}`, user_id: currentUserId })
-      toast.success('Task created')
+      toast.success(t.tasks.taskCreated)
       setModalOpen(false)
       setForm(emptyForm)
     }
@@ -87,38 +89,38 @@ export function TasksClient({ initialTasks, leads, profiles, currentUserId, curr
   }
 
   const urgencyConfig = {
-    overdue: { label: 'Overdue', class: 'border-l-red-500' },
-    urgent: { label: 'Due Today', class: 'border-l-orange-500' },
-    soon: { label: 'Due Soon', class: 'border-l-yellow-500' },
+    overdue: { label: t.tasks.overdueLabel, class: 'border-l-red-500' },
+    urgent: { label: t.tasks.urgentLabel, class: 'border-l-orange-500' },
+    soon: { label: t.tasks.soonLabel, class: 'border-l-yellow-500' },
     normal: { label: '', class: 'border-l-border' },
     completed: { label: '', class: 'border-l-green-500' },
   }
 
   const counts = {
     all: tasks.length,
-    mine: tasks.filter(t => t.assigned_to === currentUserId).length,
-    pending: tasks.filter(t => !t.completed).length,
-    overdue: tasks.filter(t => !t.completed && t.due_date && new Date(t.due_date) < now).length,
+    mine: tasks.filter(task => task.assigned_to === currentUserId).length,
+    pending: tasks.filter(task => !task.completed).length,
+    overdue: tasks.filter(task => !task.completed && task.due_date && new Date(task.due_date) < now).length,
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Tasks & Follow-ups</h1>
-          <p className="text-muted-foreground text-sm mt-1">{counts.pending} pending tasks</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.tasks.title}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{counts.pending} {t.tasks.pendingTasks}</p>
         </div>
         <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />New Task
+          <Plus className="w-4 h-4 mr-2" />{t.tasks.newTask}
         </Button>
       </div>
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList>
-          <TabsTrigger value="all">All ({counts.all})</TabsTrigger>
-          <TabsTrigger value="mine">My Tasks ({counts.mine})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({counts.pending})</TabsTrigger>
-          <TabsTrigger value="overdue" className="text-red-400">Overdue ({counts.overdue})</TabsTrigger>
+          <TabsTrigger value="all">{t.tasks.tabAll} ({counts.all})</TabsTrigger>
+          <TabsTrigger value="mine">{t.tasks.tabMine} ({counts.mine})</TabsTrigger>
+          <TabsTrigger value="pending">{t.tasks.tabPending} ({counts.pending})</TabsTrigger>
+          <TabsTrigger value="overdue" className="text-red-400">{t.tasks.tabOverdue} ({counts.overdue})</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -126,7 +128,7 @@ export function TasksClient({ initialTasks, leads, profiles, currentUserId, curr
         {filtered.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
-              {tab === 'overdue' ? 'No overdue tasks!' : 'No tasks found. Create your first task!'}
+              {tab === 'overdue' ? t.tasks.noOverdue : t.tasks.noTasks}
             </CardContent>
           </Card>
         ) : (
@@ -181,25 +183,25 @@ export function TasksClient({ initialTasks, leads, profiles, currentUserId, curr
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>New Task</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t.tasks.newTask}</DialogTitle></DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Title *</Label>
-              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Follow up with John Doe" />
+              <Label>{t.tasks.taskTitle}</Label>
+              <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder={t.tasks.followUpPlaceholder} />
             </div>
             <div className="space-y-2">
-              <Label>Description</Label>
-              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Task details..." rows={2} />
+              <Label>{t.tasks.description}</Label>
+              <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder={t.tasks.descriptionPlaceholder} rows={2} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Due Date</Label>
+                <Label>{t.tasks.dueDate}</Label>
                 <Input type="datetime-local" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>Assign To</Label>
+                <Label>{t.tasks.assignTo}</Label>
                 <Select value={form.assigned_to} onValueChange={v => setForm(f => ({ ...f, assigned_to: v ?? '' }))}>
-                  <SelectTrigger><SelectValue placeholder="Select person" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t.tasks.selectPerson} /></SelectTrigger>
                   <SelectContent>
                     {profiles.map(p => <SelectItem key={p.id} value={p.id}>{p.full_name || p.email}</SelectItem>)}
                   </SelectContent>
@@ -207,19 +209,19 @@ export function TasksClient({ initialTasks, leads, profiles, currentUserId, curr
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Link to Lead (optional)</Label>
+              <Label>{t.tasks.linkToLead}</Label>
               <Select value={form.lead_id} onValueChange={v => setForm(f => ({ ...f, lead_id: v ?? '' }))}>
-                <SelectTrigger><SelectValue placeholder="Select lead" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t.tasks.selectPerson} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No lead</SelectItem>
+                  <SelectItem value="">{t.tasks.noLead}</SelectItem>
                   {leads.map(l => <SelectItem key={l.id} value={l.id}>{l.full_name}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Creating...' : 'Create Task'}</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>{t.common.cancel}</Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? t.tasks.creating : t.tasks.createTask}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

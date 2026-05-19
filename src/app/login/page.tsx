@@ -9,10 +9,12 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { useLanguage } from '@/lib/language-context'
 
 export default function LoginPage() {
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useLanguage()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -25,16 +27,11 @@ export default function LoginPage() {
     if (error) {
       toast.error(error.message)
     } else {
-      toast.success('Welcome back!')
+      toast.success(t.auth.welcomeBack)
       router.push('/dashboard')
       router.refresh()
     }
     setLoading(false)
-  }
-
-  const fillDemo = () => {
-    setEmail('demo@coursecrm.com')
-    setPassword('demo123456')
   }
 
   return (
@@ -46,18 +43,18 @@ export default function LoginPage() {
             <BookOpen className="w-7 h-7 text-primary" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight">Course CRM</h1>
-          <p className="text-muted-foreground text-sm">Sign in to your workspace</p>
+          <p className="text-muted-foreground text-sm">{t.auth.workspaceSubtitle}</p>
         </div>
 
         {/* Form */}
         <div className="bg-card border border-border rounded-2xl p-8 shadow-xl shadow-black/10">
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.auth.email}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@company.com"
+                placeholder={t.auth.emailPlaceholder}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -66,12 +63,12 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t.auth.password}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder={t.auth.password}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
@@ -89,35 +86,17 @@ export default function LoginPage() {
 
             <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading ? t.auth.signingIn : t.auth.signIn}
             </Button>
           </form>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
+          {t.auth.dontHaveAccount}{' '}
           <Link href="/signup" className="text-primary hover:underline font-medium">
-            Sign up
+            {t.auth.signUpLink}
           </Link>
         </p>
-
-        {/* Demo credentials */}
-        <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Demo Credentials</p>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Email</span>
-              <span className="font-mono text-foreground">demo@coursecrm.com</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Password</span>
-              <span className="font-mono text-foreground">demo123456</span>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={fillDemo}>
-            Use demo credentials
-          </Button>
-        </div>
       </div>
     </div>
   )

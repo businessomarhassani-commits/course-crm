@@ -9,10 +9,12 @@ import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
 import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import { useLanguage } from '@/lib/language-context'
 
 export default function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useLanguage()
   const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -21,8 +23,8 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!fullName.trim()) { toast.error('Full name is required'); return }
-    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
+    if (!fullName.trim()) { toast.error(t.auth.nameRequired); return }
+    if (password.length < 8) { toast.error(t.auth.passwordMin); return }
 
     setLoading(true)
     const { error } = await supabase.auth.signUp({
@@ -36,11 +38,10 @@ export default function SignupPage() {
     if (error) {
       toast.error(error.message)
     } else {
-      toast.success('Account created! Signing you in...')
-      // Sign in immediately after signup
+      toast.success(t.auth.accountCreated)
       const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
       if (signInError) {
-        toast.error('Account created — please sign in.')
+        toast.error(t.auth.signInAfterSignup)
         router.push('/login')
       } else {
         router.push('/dashboard')
@@ -58,15 +59,15 @@ export default function SignupPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20">
             <BookOpen className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
-          <p className="text-muted-foreground text-sm">Join the team workspace</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.auth.signUp}</h1>
+          <p className="text-muted-foreground text-sm">{t.auth.joinTeam}</p>
         </div>
 
         {/* Form */}
         <div className="bg-card border border-border rounded-2xl p-8 shadow-xl shadow-black/10">
           <form onSubmit={handleSignup} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">{t.auth.fullName}</Label>
               <Input
                 id="fullName"
                 type="text"
@@ -80,11 +81,11 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t.auth.email}</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@company.com"
+                placeholder={t.auth.emailPlaceholder}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
@@ -93,12 +94,12 @@ export default function SignupPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t.auth.password}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="At least 8 characters"
+                  placeholder={t.auth.passwordPlaceholder}
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
@@ -117,22 +118,23 @@ export default function SignupPage() {
 
             <Button type="submit" className="w-full h-11" disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-              {loading ? 'Creating account...' : 'Create account'}
+              {loading ? t.auth.creatingAccount : t.auth.signUp}
             </Button>
           </form>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          Already have an account?{' '}
+          {t.auth.alreadyHaveAccount}{' '}
           <Link href="/login" className="text-primary hover:underline font-medium">
-            Sign in
+            {t.auth.signInLink}
           </Link>
         </p>
 
         <div className="bg-muted/50 border border-border rounded-xl p-4">
           <p className="text-xs text-muted-foreground text-center">
-            New accounts are assigned the <span className="font-medium text-foreground">Closer</span> role by default.
-            An admin can change your role from the Team page.
+            {t.auth.newAccountNote}{' '}
+            <span className="font-medium text-foreground">{t.auth.closerRole}</span>{' '}
+            {t.auth.roleNote}
           </p>
         </div>
       </div>

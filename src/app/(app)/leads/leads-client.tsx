@@ -20,9 +20,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Plus, Search, Download, MessageCircle, Pencil, Trash2,
-  ChevronLeft, ChevronRight, ExternalLink, Filter
+  ChevronLeft, ChevronRight, ExternalLink
 } from 'lucide-react'
 import Link from 'next/link'
+import { useLanguage } from '@/lib/language-context'
 
 const STATUSES: LeadStatus[] = ['New', 'Contacted', 'Interested', 'Follow-up', 'Closed', 'No answer', 'Lost', 'Refund']
 const SOURCES = ['Instagram', 'Facebook', 'YouTube', 'TikTok', 'Referral', 'Website', 'WhatsApp', 'Other']
@@ -43,6 +44,7 @@ const emptyForm = {
 
 export function LeadsClient({ initialLeads, profiles, currentUserId, currentUserRole }: LeadsClientProps) {
   const supabase = createClient()
+  const { t } = useLanguage()
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -96,7 +98,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
   }
 
   const handleSave = async () => {
-    if (!form.full_name.trim()) { toast.error('Full name is required'); return }
+    if (!form.full_name.trim()) { toast.error(t.leads.fullNameRequired); return }
     setSaving(true)
     const payload = {
       ...form,
@@ -110,7 +112,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
       if (error) { toast.error(error.message) } else {
         setLeads(prev => prev.map(l => l.id === editLead.id ? data : l))
         await supabase.from('activities').insert({ type: 'lead_updated', description: `Updated lead: ${form.full_name}`, user_id: currentUserId, lead_id: editLead.id })
-        toast.success('Lead updated')
+        toast.success(t.leads.leadUpdated)
         setModalOpen(false)
       }
     } else {
@@ -118,7 +120,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
       if (error) { toast.error(error.message) } else {
         setLeads(prev => [data, ...prev])
         await supabase.from('activities').insert({ type: 'lead_created', description: `Created lead: ${form.full_name}`, user_id: currentUserId, lead_id: data.id })
-        toast.success('Lead created')
+        toast.success(t.leads.leadCreated)
         setModalOpen(false)
       }
     }
@@ -126,12 +128,12 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
   }
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Delete lead "${name}"?`)) return
+    if (!confirm(t.leads.deleteConfirm.replace('{name}', name))) return
     setDeleting(id)
     const { error } = await supabase.from('leads').delete().eq('id', id)
     if (error) { toast.error(error.message) } else {
       setLeads(prev => prev.filter(l => l.id !== id))
-      toast.success('Lead deleted')
+      toast.success(t.leads.leadDeleted)
     }
     setDeleting(null)
   }
@@ -143,7 +145,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
       offer: l.interested_offer, budget: l.budget, created: l.created_at,
     }))
     exportToCSV(data as Record<string, unknown>[], 'leads')
-    toast.success('Exported to CSV')
+    toast.success(t.leads.exported)
   }
 
   const closers = profiles.filter(p => p.role === 'closer' || p.role === 'admin')
@@ -152,15 +154,15 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Leads</h1>
-          <p className="text-muted-foreground text-sm mt-1">{filtered.length} leads total</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.leads.title}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{filtered.length} {t.leads.leadsTotal}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />Export
+            <Download className="w-4 h-4 mr-2" />{t.leads.export}
           </Button>
           <Button size="sm" onClick={openCreate}>
-            <Plus className="w-4 h-4 mr-2" />New Lead
+            <Plus className="w-4 h-4 mr-2" />{t.leads.newLead}
           </Button>
         </div>
       </div>
@@ -169,27 +171,27 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search leads..." value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-9" />
+          <Input placeholder={t.leads.searchLeads} value={search} onChange={e => { setSearch(e.target.value); setPage(1) }} className="pl-9 h-9" />
         </div>
         <Select value={filterStatus} onValueChange={v => { setFilterStatus(v ?? 'all'); setPage(1) }}>
-          <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-36"><SelectValue placeholder={t.leads.colStatus} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">{t.leads.allStatuses}</SelectItem>
             {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={filterSource} onValueChange={v => { setFilterSource(v ?? 'all'); setPage(1) }}>
-          <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Source" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-36"><SelectValue placeholder={t.leads.colSource} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All sources</SelectItem>
+            <SelectItem value="all">{t.leads.allSources}</SelectItem>
             {SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
         {currentUserRole === 'admin' && (
           <Select value={filterCloser} onValueChange={v => { setFilterCloser(v ?? 'all'); setPage(1) }}>
-            <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Closer" /></SelectTrigger>
+            <SelectTrigger className="h-9 w-36"><SelectValue placeholder={t.leads.colAssigned} /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All closers</SelectItem>
+              <SelectItem value="all">{t.leads.allClosers}</SelectItem>
               {closers.map(c => <SelectItem key={c.id} value={c.id}>{c.full_name || c.email}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -202,20 +204,20 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Name</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Contact</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Source</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Offer</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Assigned</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.leads.colName}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.leads.colContact}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.leads.colStatus}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.leads.colSource}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.leads.colOffer}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.leads.colAssigned}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.leads.colDate}</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t.leads.colActions}</th>
               </tr>
             </thead>
             <tbody>
               {paginated.length === 0 && (
                 <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">
-                  {search || filterStatus !== 'all' ? 'No leads match your filters' : 'No leads yet. Create your first lead!'}
+                  {search || filterStatus !== 'all' ? t.leads.noMatch : t.leads.noLeads}
                 </td></tr>
               )}
               {paginated.map(lead => (
@@ -277,7 +279,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
         {totalPages > 1 && (
           <div className="flex items-center justify-between px-4 py-3 border-t border-border">
             <p className="text-xs text-muted-foreground">
-              Showing {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
+              {t.leads.showing} {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} {t.leads.of} {filtered.length}
             </p>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => setPage(p => p - 1)} disabled={page === 1}>
@@ -296,76 +298,76 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editLead ? 'Edit Lead' : 'New Lead'}</DialogTitle>
+            <DialogTitle>{editLead ? t.leads.editLead : t.leads.createLead}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Full Name *</Label>
+              <Label>{t.leads.fullName}</Label>
               <Input value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="John Doe" />
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
+              <Label>{t.leads.phone}</Label>
               <Input value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} placeholder="+1234567890" />
             </div>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>{t.leads.email}</Label>
               <Input value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} placeholder="john@example.com" type="email" />
             </div>
             <div className="space-y-2">
-              <Label>Country</Label>
+              <Label>{t.leads.country}</Label>
               <Input value={form.country} onChange={e => setForm(f => ({ ...f, country: e.target.value }))} placeholder="USA" />
             </div>
             <div className="space-y-2">
-              <Label>Instagram</Label>
+              <Label>{t.leads.instagram}</Label>
               <Input value={form.instagram} onChange={e => setForm(f => ({ ...f, instagram: e.target.value }))} placeholder="@handle" />
             </div>
             <div className="space-y-2">
-              <Label>Facebook</Label>
+              <Label>{t.leads.facebook}</Label>
               <Input value={form.facebook} onChange={e => setForm(f => ({ ...f, facebook: e.target.value }))} placeholder="Profile URL" />
             </div>
             <div className="space-y-2">
-              <Label>Lead Source</Label>
+              <Label>{t.leads.leadSource}</Label>
               <Select value={form.lead_source} onValueChange={v => setForm(f => ({ ...f, lead_source: v ?? '' }))}>
-                <SelectTrigger><SelectValue placeholder="Select source" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t.leads.selectSource} /></SelectTrigger>
                 <SelectContent>{SOURCES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label>{t.leads.statusLabel}</Label>
               <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as LeadStatus }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Interested Offer</Label>
-              <Input value={form.interested_offer} onChange={e => setForm(f => ({ ...f, interested_offer: e.target.value }))} placeholder="Course name" />
+              <Label>{t.leads.interestedOffer}</Label>
+              <Input value={form.interested_offer} onChange={e => setForm(f => ({ ...f, interested_offer: e.target.value }))} placeholder={t.leads.courseName} />
             </div>
             <div className="space-y-2">
-              <Label>Budget ($)</Label>
+              <Label>{t.leads.budget}</Label>
               <Input value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="500" type="number" />
             </div>
             {(currentUserRole === 'admin' || currentUserRole === 'partner') && (
               <div className="space-y-2 col-span-2">
-                <Label>Assign To</Label>
+                <Label>{t.leads.assignTo}</Label>
                 <Select value={form.assigned_to} onValueChange={v => setForm(f => ({ ...f, assigned_to: v ?? '' }))}>
-                  <SelectTrigger><SelectValue placeholder="Select closer" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t.leads.selectCloser} /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value="">{t.leads.unassigned}</SelectItem>
                     {closers.map(c => <SelectItem key={c.id} value={c.id}>{c.full_name || c.email}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div className="space-y-2 col-span-2">
-              <Label>Notes</Label>
-              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Any notes..." rows={3} />
+              <Label>{t.leads.notes}</Label>
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder={t.leads.anyNotes} rows={3} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>{t.common.cancel}</Button>
             <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'Saving...' : editLead ? 'Update Lead' : 'Create Lead'}
+              {saving ? t.common.saving : editLead ? t.leads.updateLead : t.leads.createLead}
             </Button>
           </DialogFooter>
         </DialogContent>

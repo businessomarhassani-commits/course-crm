@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Lead, Note, Activity, Task, Profile, LeadStatus } from '@/types'
 import { toast } from 'sonner'
@@ -14,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ArrowLeft, MessageCircle, Phone, Mail, MapPin, DollarSign, BookOpen, CheckCircle2, Circle, AtSign, Globe } from 'lucide-react'
 import Link from 'next/link'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useLanguage } from '@/lib/language-context'
 
 const STATUSES: LeadStatus[] = ['New', 'Contacted', 'Interested', 'Follow-up', 'Closed', 'No answer', 'Lost', 'Refund']
 
@@ -28,8 +28,8 @@ interface Props {
 }
 
 export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activities, tasks, profiles, currentUserId, currentUserRole }: Props) {
-  const router = useRouter()
   const supabase = createClient()
+  const { t } = useLanguage()
   const [lead, setLead] = useState(initialLead)
   const [notes, setNotes] = useState(initialNotes)
   const [noteText, setNoteText] = useState('')
@@ -42,7 +42,7 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
     if (error) { toast.error(error.message) } else {
       setLead(l => ({ ...l, status }))
       await supabase.from('activities').insert({ type: 'status_changed', description: `Status changed to ${status}`, user_id: currentUserId, lead_id: lead.id })
-      toast.success(`Status updated to ${status}`)
+      toast.success(`${t.leadDetail.statusUpdated} ${status}`)
     }
     setUpdatingStatus(false)
   }
@@ -55,7 +55,7 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
       setNotes(prev => [data, ...prev])
       await supabase.from('activities').insert({ type: 'note_added', description: `Note added`, user_id: currentUserId, lead_id: lead.id })
       setNoteText('')
-      toast.success('Note added')
+      toast.success(t.leadDetail.noteAdded)
     }
     setSavingNote(false)
   }
@@ -70,13 +70,13 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
         </Link>
         <div className="flex-1">
           <h1 className="text-2xl font-bold tracking-tight">{lead.full_name}</h1>
-          <p className="text-muted-foreground text-sm">Added {formatDate(lead.created_at)}</p>
+          <p className="text-muted-foreground text-sm">{t.leadDetail.added} {formatDate(lead.created_at)}</p>
         </div>
         <Badge variant="outline" className={`${getStatusColor(lead.status)}`}>{lead.status}</Badge>
         {lead.phone && (
           <a href={`https://wa.me/${lead.phone.replace(/\D/g, '')}`} target="_blank" rel="noopener noreferrer">
             <Button size="sm" className="bg-green-600 hover:bg-green-700">
-              <MessageCircle className="w-4 h-4 mr-2" />WhatsApp
+              <MessageCircle className="w-4 h-4 mr-2" />{t.leadDetail.whatsapp}
             </Button>
           </a>
         )}
@@ -87,7 +87,7 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
         <div className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Contact Info</CardTitle>
+              <CardTitle className="text-sm">{t.leads.colContact}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {lead.phone && (
@@ -141,17 +141,17 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
                 </div>
               )}
               <div className="text-sm">
-                <span className="text-muted-foreground">Source:</span> {lead.lead_source || '—'}
+                <span className="text-muted-foreground">{t.leads.leadSource}:</span> {lead.lead_source || '—'}
               </div>
               <div className="text-sm">
-                <span className="text-muted-foreground">Assigned:</span> {lead.assignee?.full_name || '—'}
+                <span className="text-muted-foreground">{t.leads.colAssigned}:</span> {lead.assignee?.full_name || '—'}
               </div>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm">Update Status</CardTitle>
+              <CardTitle className="text-sm">{t.leadDetail.updateStatus}</CardTitle>
             </CardHeader>
             <CardContent>
               <Select value={lead.status} onValueChange={v => updateStatus(v as LeadStatus)} disabled={updatingStatus}>
@@ -166,20 +166,20 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
         <div className="lg:col-span-2">
           <Tabs defaultValue="notes">
             <TabsList>
-              <TabsTrigger value="notes">Notes ({notes.length})</TabsTrigger>
-              <TabsTrigger value="activity">Activity ({activities.length})</TabsTrigger>
-              <TabsTrigger value="tasks">Tasks ({tasks.length})</TabsTrigger>
+              <TabsTrigger value="notes">{t.leadDetail.notes} ({notes.length})</TabsTrigger>
+              <TabsTrigger value="activity">{t.leadDetail.activity} ({activities.length})</TabsTrigger>
+              <TabsTrigger value="tasks">{t.leadDetail.tasks} ({tasks.length})</TabsTrigger>
             </TabsList>
 
             <TabsContent value="notes" className="space-y-4 mt-4">
               <div className="space-y-2">
-                <Textarea value={noteText} onChange={e => setNoteText(e.target.value)} placeholder="Add a note..." rows={3} />
+                <Textarea value={noteText} onChange={e => setNoteText(e.target.value)} placeholder={t.leadDetail.notePlaceholder} rows={3} />
                 <Button size="sm" onClick={addNote} disabled={savingNote || !noteText.trim()}>
-                  {savingNote ? 'Adding...' : 'Add Note'}
+                  {savingNote ? t.leadDetail.addingNote : t.leadDetail.addNoteBtn}
                 </Button>
               </div>
               {notes.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No notes yet</p>
+                <p className="text-sm text-muted-foreground text-center py-8">{t.leadDetail.noNotes}</p>
               ) : (
                 <div className="space-y-3">
                   {notes.map(note => (
@@ -198,7 +198,7 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
 
             <TabsContent value="activity" className="mt-4">
               {activities.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No activity yet</p>
+                <p className="text-sm text-muted-foreground text-center py-8">{t.leadDetail.noActivity}</p>
               ) : (
                 <div className="space-y-3">
                   {activities.map(a => (
@@ -216,7 +216,7 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
 
             <TabsContent value="tasks" className="mt-4">
               {tasks.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">No tasks for this lead</p>
+                <p className="text-sm text-muted-foreground text-center py-8">{t.leadDetail.noTasks}</p>
               ) : (
                 <div className="space-y-3">
                   {tasks.map(task => (
@@ -229,7 +229,7 @@ export function LeadDetailClient({ lead: initialLead, notes: initialNotes, activ
                           <p className={`text-sm font-medium ${task.completed ? 'line-through text-muted-foreground' : ''}`}>{task.title}</p>
                           {task.description && <p className="text-xs text-muted-foreground">{task.description}</p>}
                           <p className="text-xs text-muted-foreground mt-1">
-                            {task.assignee?.full_name} {task.due_date && `· Due ${formatDate(task.due_date)}`}
+                            {task.assignee?.full_name} {task.due_date && `· ${formatDate(task.due_date)}`}
                           </p>
                         </div>
                       </CardContent>

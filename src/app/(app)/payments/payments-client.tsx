@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Upload, Search, DollarSign, Clock, CheckCircle2, RefreshCcw } from 'lucide-react'
+import { Plus, Search, DollarSign, Clock, CheckCircle2 } from 'lucide-react'
+import { useLanguage } from '@/lib/language-context'
 
 const PAYMENT_METHODS = ['Bank Transfer', 'Cash', 'Stripe', 'Partial', 'PayPal', 'Crypto']
 const STATUSES: PaymentStatus[] = ['Pending', 'Confirmed', 'Refunded']
@@ -31,6 +32,7 @@ const emptyForm = {
 
 export function PaymentsClient({ initialPayments, sales, currentUserId, currentUserRole }: Props) {
   const supabase = createClient()
+  const { t } = useLanguage()
   const [payments, setPayments] = useState(initialPayments)
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -49,7 +51,7 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
   const totalPending = filtered.filter(p => p.status === 'Pending').reduce((sum, p) => sum + p.amount, 0)
 
   const handleSave = async () => {
-    if (!form.amount) { toast.error('Amount is required'); return }
+    if (!form.amount) { toast.error(t.payments.amountIsRequired); return }
     setSaving(true)
 
     let proof_url: string | null = null
@@ -57,7 +59,7 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
       const ext = proofFile.name.split('.').pop()
       const path = `proofs/${Date.now()}.${ext}`
       const { error: uploadError } = await supabase.storage.from('payments').upload(path, proofFile)
-      if (uploadError) { toast.error('Failed to upload proof: ' + uploadError.message); setSaving(false); return }
+      if (uploadError) { toast.error(t.payments.proofUploadFailed + uploadError.message); setSaving(false); return }
       const { data: urlData } = supabase.storage.from('payments').getPublicUrl(path)
       proof_url = urlData.publicUrl
     }
@@ -73,7 +75,7 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
     if (error) { toast.error(error.message) } else {
       setPayments(prev => [data, ...prev])
       await supabase.from('activities').insert({ type: 'payment_added', description: `Payment of ${formatCurrency(parseFloat(form.amount))} recorded (${form.status})`, user_id: currentUserId })
-      toast.success('Payment recorded')
+      toast.success(t.payments.paymentRecorded)
       setModalOpen(false)
       setForm(emptyForm)
       setProofFile(null)
@@ -85,7 +87,7 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
     const { error } = await supabase.from('payments').update({ status }).eq('id', id)
     if (error) { toast.error(error.message) } else {
       setPayments(prev => prev.map(p => p.id === id ? { ...p, status } : p))
-      toast.success('Status updated')
+      toast.success(t.payments.statusUpdated)
     }
   }
 
@@ -93,11 +95,11 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Payments</h1>
-          <p className="text-muted-foreground text-sm mt-1">{filtered.length} payments</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.payments.title}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{filtered.length} {t.payments.paymentsCount}</p>
         </div>
         <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />Add Payment
+          <Plus className="w-4 h-4 mr-2" />{t.payments.addPayment}
         </Button>
       </div>
 
@@ -105,15 +107,15 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
       <div className="grid grid-cols-3 gap-4">
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="p-2 rounded-lg bg-green-500/10"><CheckCircle2 className="w-4 h-4 text-green-400" /></div>
-          <div><p className="text-xs text-muted-foreground">Confirmed</p><p className="text-xl font-bold text-green-400">{formatCurrency(totalConfirmed)}</p></div>
+          <div><p className="text-xs text-muted-foreground">{t.payments.confirmed}</p><p className="text-xl font-bold text-green-400">{formatCurrency(totalConfirmed)}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="p-2 rounded-lg bg-yellow-500/10"><Clock className="w-4 h-4 text-yellow-400" /></div>
-          <div><p className="text-xs text-muted-foreground">Pending</p><p className="text-xl font-bold text-yellow-400">{formatCurrency(totalPending)}</p></div>
+          <div><p className="text-xs text-muted-foreground">{t.payments.pending}</p><p className="text-xl font-bold text-yellow-400">{formatCurrency(totalPending)}</p></div>
         </CardContent></Card>
         <Card><CardContent className="p-4 flex items-center gap-3">
           <div className="p-2 rounded-lg bg-blue-500/10"><DollarSign className="w-4 h-4 text-blue-400" /></div>
-          <div><p className="text-xs text-muted-foreground">Total Payments</p><p className="text-xl font-bold">{filtered.length}</p></div>
+          <div><p className="text-xs text-muted-foreground">{t.payments.totalPayments}</p><p className="text-xl font-bold">{filtered.length}</p></div>
         </CardContent></Card>
       </div>
 
@@ -121,12 +123,12 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
       <div className="flex gap-2">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search payments..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
+          <Input placeholder={t.payments.searchPayments} value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
         </div>
         <Select value={filterStatus} onValueChange={v => setFilterStatus(v ?? 'all')}>
-          <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Status" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-36"><SelectValue placeholder={t.payments.allStatuses} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">{t.payments.allStatuses}</SelectItem>
             {STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
           </SelectContent>
         </Select>
@@ -138,19 +140,19 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Customer</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Amount</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Method</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Status</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Proof</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Notes</th>
-                <th className="text-left px-4 py-3 font-medium text-muted-foreground">Date</th>
-                <th className="text-right px-4 py-3 font-medium text-muted-foreground">Actions</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.payments.colCustomer}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.payments.colAmount}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.payments.colMethod}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.payments.colStatus}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.payments.colProof}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.payments.colNotes}</th>
+                <th className="text-left px-4 py-3 font-medium text-muted-foreground">{t.payments.colDate}</th>
+                <th className="text-right px-4 py-3 font-medium text-muted-foreground">{t.payments.colActions}</th>
               </tr>
             </thead>
             <tbody>
               {filtered.length === 0 ? (
-                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">No payments recorded yet</td></tr>
+                <tr><td colSpan={8} className="px-4 py-12 text-center text-muted-foreground">{t.payments.noPayments}</td></tr>
               ) : (
                 filtered.map(payment => (
                   <tr key={payment.id} className="border-b border-border/50 hover:bg-muted/20 transition-colors">
@@ -165,7 +167,7 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
                     </td>
                     <td className="px-4 py-3">
                       {payment.proof_url
-                        ? <a href={payment.proof_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">View</a>
+                        ? <a href={payment.proof_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs">{t.payments.viewProof}</a>
                         : <span className="text-muted-foreground text-xs">—</span>}
                     </td>
                     <td className="px-4 py-3 text-xs text-muted-foreground max-w-[150px] truncate">{payment.notes || '—'}</td>
@@ -187,51 +189,51 @@ export function PaymentsClient({ initialPayments, sales, currentUserId, currentU
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Add Payment</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t.payments.addPayment}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
-              <Label>Link to Sale (optional)</Label>
+              <Label>{t.payments.linkToSale}</Label>
               <Select value={form.sale_id} onValueChange={v => setForm(f => ({ ...f, sale_id: v ?? '' }))}>
-                <SelectTrigger><SelectValue placeholder="Select sale" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t.payments.selectSale} /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No link</SelectItem>
+                  <SelectItem value="">{t.payments.noLink}</SelectItem>
                   {sales.map(s => <SelectItem key={s.id} value={s.id}>{s.customer_name} — {s.offer}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Amount ($) *</Label>
+              <Label>{t.payments.amountRequired}</Label>
               <Input value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} placeholder="497" type="number" />
             </div>
             <div className="space-y-2">
-              <Label>Method</Label>
+              <Label>{t.payments.method}</Label>
               <Select value={form.method} onValueChange={v => setForm(f => ({ ...f, method: v ?? 'Bank Transfer' }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{PAYMENT_METHODS.map(m => <SelectItem key={m} value={m}>{m}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Status</Label>
+              <Label>{t.payments.statusLabel}</Label>
               <Select value={form.status} onValueChange={v => setForm(f => ({ ...f, status: v as PaymentStatus }))}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{STATUSES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Payment Proof</Label>
+              <Label>{t.payments.paymentProof}</Label>
               <div className="flex items-center gap-2">
                 <Input type="file" accept="image/*,application/pdf" onChange={e => setProofFile(e.target.files?.[0] ?? null)} className="h-9" />
               </div>
               {proofFile && <p className="text-xs text-muted-foreground">{proofFile.name}</p>}
             </div>
             <div className="space-y-2 col-span-2">
-              <Label>Notes</Label>
+              <Label>{t.payments.paymentNotes}</Label>
               <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Payment notes..." rows={2} />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : 'Add Payment'}</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>{t.common.cancel}</Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? t.common.saving : t.payments.addPaymentBtn}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

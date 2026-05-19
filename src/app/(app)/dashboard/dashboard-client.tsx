@@ -1,11 +1,10 @@
 'use client'
 
-import { formatCurrency, formatRelativeTime, getStatusColor } from '@/lib/utils'
+import { formatCurrency, formatRelativeTime } from '@/lib/utils'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import {
   LineChart, Line, PieChart, Pie, Cell, BarChart, Bar,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts'
 import {
   Users, DollarSign, TrendingUp, AlertCircle, ShoppingCart,
@@ -13,6 +12,7 @@ import {
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/lib/language-context'
 
 const PIE_COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#ef4444']
 
@@ -34,19 +34,21 @@ interface DashboardClientProps {
 export function DashboardClient({
   stats, dailySales, sourcePieData, statusBarData, recentActivities, recentSales
 }: DashboardClientProps) {
+  const { t } = useLanguage()
+
   const statCards = [
-    { title: 'Total Leads', value: stats.totalLeads.toString(), icon: Users, change: '+12%', color: 'text-blue-400', href: '/leads' },
-    { title: 'Total Revenue', value: formatCurrency(stats.totalRevenue), icon: DollarSign, change: '+8%', color: 'text-green-400', href: '/sales' },
-    { title: 'Total Sales', value: stats.totalSales.toString(), icon: ShoppingCart, change: '+5%', color: 'text-purple-400', href: '/sales' },
-    { title: 'Conversion Rate', value: `${stats.conversionRate}%`, icon: TrendingUp, change: '+2%', color: 'text-yellow-400', href: '/leads' },
-    { title: 'Pending Follow-ups', value: stats.pendingFollowups.toString(), icon: AlertCircle, change: '', color: 'text-orange-400', href: '/tasks' },
+    { title: t.dashboard.totalLeads, value: stats.totalLeads.toString(), icon: Users, change: '+12%', color: 'text-blue-400', href: '/leads' },
+    { title: t.dashboard.totalRevenue, value: formatCurrency(stats.totalRevenue), icon: DollarSign, change: '+8%', color: 'text-green-400', href: '/sales' },
+    { title: t.dashboard.totalSales, value: stats.totalSales.toString(), icon: ShoppingCart, change: '+5%', color: 'text-purple-400', href: '/sales' },
+    { title: t.dashboard.conversionRate, value: `${stats.conversionRate}%`, icon: TrendingUp, change: '+2%', color: 'text-yellow-400', href: '/leads' },
+    { title: t.dashboard.pendingFollowups, value: stats.pendingFollowups.toString(), icon: AlertCircle, change: '', color: 'text-orange-400', href: '/tasks' },
   ]
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground text-sm mt-1">Welcome back. Here&apos;s what&apos;s happening.</p>
+        <h1 className="text-2xl font-bold tracking-tight">{t.dashboard.title}</h1>
+        <p className="text-muted-foreground text-sm mt-1">{t.dashboard.subtitle}</p>
       </div>
 
       {/* Stats */}
@@ -80,9 +82,9 @@ export function DashboardClient({
 
       {/* Quick actions */}
       <div className="flex flex-wrap gap-2">
-        <Link href="/leads?new=1"><Button size="sm">+ New Lead</Button></Link>
-        <Link href="/sales?new=1"><Button size="sm" variant="outline">+ New Sale</Button></Link>
-        <Link href="/tasks?new=1"><Button size="sm" variant="outline">+ New Task</Button></Link>
+        <Link href="/leads?new=1"><Button size="sm">{t.dashboard.newLead}</Button></Link>
+        <Link href="/sales?new=1"><Button size="sm" variant="outline">{t.dashboard.newSale}</Button></Link>
+        <Link href="/tasks?new=1"><Button size="sm" variant="outline">{t.dashboard.newTask}</Button></Link>
       </div>
 
       {/* Charts */}
@@ -90,7 +92,7 @@ export function DashboardClient({
         {/* Daily Revenue */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Revenue (Last 7 Days)</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.revenueChart}</CardTitle>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={200}>
@@ -108,11 +110,11 @@ export function DashboardClient({
         {/* Lead Sources */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Lead Sources</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.leadSources}</CardTitle>
           </CardHeader>
           <CardContent>
             {sourcePieData.length === 0 ? (
-              <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">No data yet</div>
+              <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">{t.dashboard.noData}</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
@@ -131,11 +133,11 @@ export function DashboardClient({
         {/* Status distribution */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Lead Status Distribution</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.statusDistribution}</CardTitle>
           </CardHeader>
           <CardContent>
             {statusBarData.length === 0 ? (
-              <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">No data yet</div>
+              <div className="h-[200px] flex items-center justify-center text-sm text-muted-foreground">{t.dashboard.noData}</div>
             ) : (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={statusBarData} layout="vertical">
@@ -153,11 +155,11 @@ export function DashboardClient({
         {/* Recent Sales */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Recent Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">{t.dashboard.recentSales}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {recentSales.length === 0 ? (
-              <div className="text-sm text-muted-foreground py-8 text-center">No sales yet</div>
+              <div className="text-sm text-muted-foreground py-8 text-center">{t.dashboard.noSales}</div>
             ) : (
               recentSales.map(sale => (
                 <div key={sale.id} className="flex items-center justify-between">
@@ -180,12 +182,12 @@ export function DashboardClient({
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Activity className="w-4 h-4" /> Recent Activity
+            <Activity className="w-4 h-4" /> {t.dashboard.recentActivity}
           </CardTitle>
         </CardHeader>
         <CardContent>
           {recentActivities.length === 0 ? (
-            <div className="text-sm text-muted-foreground py-8 text-center">No activity yet</div>
+            <div className="text-sm text-muted-foreground py-8 text-center">{t.dashboard.noActivity}</div>
           ) : (
             <div className="space-y-3">
               {recentActivities.map(activity => (

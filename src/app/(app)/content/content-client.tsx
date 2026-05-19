@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Star, Search, Trophy, TrendingUp, Filter } from 'lucide-react'
+import { Plus, Star, Search, Trophy } from 'lucide-react'
+import { useLanguage } from '@/lib/language-context'
 
 const PLATFORMS = ['Instagram', 'Facebook', 'YouTube', 'TikTok', 'Google Ads', 'Email', 'Other']
 
@@ -26,6 +27,7 @@ const emptyForm = { name: '', platform: '', ctr: '', cpl: '', roas: '', notes: '
 
 export function ContentClient({ initialContent, currentUserId }: Props) {
   const supabase = createClient()
+  const { t } = useLanguage()
   const [content, setContent] = useState(initialContent)
   const [search, setSearch] = useState('')
   const [filterPlatform, setFilterPlatform] = useState('all')
@@ -60,7 +62,7 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
   }
 
   const handleSave = async () => {
-    if (!form.name.trim()) { toast.error('Name is required'); return }
+    if (!form.name.trim()) { toast.error(t.content.nameRequired); return }
     setSaving(true)
     const payload = {
       ...form,
@@ -75,14 +77,14 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
       const { data, error } = await supabase.from('content_tracking').update(payload).eq('id', editItem.id).select().single()
       if (error) { toast.error(error.message) } else {
         setContent(prev => prev.map(c => c.id === editItem.id ? data : c))
-        toast.success('Updated')
+        toast.success(t.content.updated)
         setModalOpen(false)
       }
     } else {
       const { data, error } = await supabase.from('content_tracking').insert(payload).select().single()
       if (error) { toast.error(error.message) } else {
         setContent(prev => [data, ...prev])
-        toast.success('Creative added')
+        toast.success(t.content.creativeAdded)
         setModalOpen(false)
       }
     }
@@ -93,7 +95,7 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
     const { error } = await supabase.from('content_tracking').update({ is_winner: !current }).eq('id', id)
     if (error) { toast.error(error.message) } else {
       setContent(prev => prev.map(c => c.id === id ? { ...c, is_winner: !current } : c))
-      toast.success(current ? 'Removed from winners' : 'Marked as winner!')
+      toast.success(current ? t.content.removedFromWinners : t.content.markedAsWinner)
     }
   }
 
@@ -105,11 +107,11 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Content Tracking</h1>
-          <p className="text-muted-foreground text-sm mt-1">{filtered.length} creatives · Avg ROAS: {avgROAS}x</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t.content.title}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{filtered.length} {t.content.creatives} · {t.content.avgROAS}: {avgROAS}x</p>
         </div>
         <Button size="sm" onClick={openCreate}>
-          <Plus className="w-4 h-4 mr-2" />Add Creative
+          <Plus className="w-4 h-4 mr-2" />{t.content.addCreative}
         </Button>
       </div>
 
@@ -117,17 +119,17 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search creatives..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
+          <Input placeholder={t.content.searchCreatives} value={search} onChange={e => setSearch(e.target.value)} className="pl-9 h-9" />
         </div>
         <Select value={filterPlatform} onValueChange={v => setFilterPlatform(v ?? 'all')}>
-          <SelectTrigger className="h-9 w-36"><SelectValue placeholder="Platform" /></SelectTrigger>
+          <SelectTrigger className="h-9 w-36"><SelectValue placeholder={t.content.platform} /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All platforms</SelectItem>
+            <SelectItem value="all">{t.content.allPlatforms}</SelectItem>
             {PLATFORMS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
           </SelectContent>
         </Select>
         <Button variant={filterWinner ? 'default' : 'outline'} size="sm" onClick={() => setFilterWinner(!filterWinner)} className="h-9">
-          <Trophy className="w-4 h-4 mr-2" />Winners Only
+          <Trophy className="w-4 h-4 mr-2" />{t.content.winnersOnly}
         </Button>
       </div>
 
@@ -135,7 +137,7 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
       {filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
-            No creatives found. Start tracking your ad performance!
+            {t.content.noCreatives}
           </CardContent>
         </Card>
       ) : (
@@ -166,15 +168,15 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
                 <div className="grid grid-cols-3 gap-3 py-3 border-y border-border">
                   <div className="text-center">
                     <p className="text-sm font-bold text-blue-400">{item.ctr != null ? `${item.ctr}%` : '—'}</p>
-                    <p className="text-xs text-muted-foreground">CTR</p>
+                    <p className="text-xs text-muted-foreground">{t.content.ctr}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-bold text-orange-400">{item.cpl != null ? `$${item.cpl}` : '—'}</p>
-                    <p className="text-xs text-muted-foreground">CPL</p>
+                    <p className="text-xs text-muted-foreground">{t.content.cpl}</p>
                   </div>
                   <div className="text-center">
                     <p className="text-sm font-bold text-green-400">{item.roas != null ? `${item.roas}x` : '—'}</p>
-                    <p className="text-xs text-muted-foreground">ROAS</p>
+                    <p className="text-xs text-muted-foreground">{t.content.roas}</p>
                   </div>
                 </div>
 
@@ -189,34 +191,34 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
       {/* Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editItem ? 'Edit Creative' : 'Add Creative'}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editItem ? t.content.editCreative : t.content.addCreative}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2 col-span-2">
-              <Label>Name *</Label>
+              <Label>{t.content.nameStar}</Label>
               <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="VSL v3 - Instagram" />
             </div>
             <div className="space-y-2">
-              <Label>Platform</Label>
+              <Label>{t.content.platform}</Label>
               <Select value={form.platform} onValueChange={v => setForm(f => ({ ...f, platform: v ?? '' }))}>
-                <SelectTrigger><SelectValue placeholder="Select platform" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t.content.selectPlatform} /></SelectTrigger>
                 <SelectContent>{PLATFORMS.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>CTR (%)</Label>
+              <Label>{t.content.ctr}</Label>
               <Input value={form.ctr} onChange={e => setForm(f => ({ ...f, ctr: e.target.value }))} placeholder="3.2" type="number" step="0.1" />
             </div>
             <div className="space-y-2">
-              <Label>CPL ($)</Label>
+              <Label>{t.content.cpl}</Label>
               <Input value={form.cpl} onChange={e => setForm(f => ({ ...f, cpl: e.target.value }))} placeholder="12.50" type="number" step="0.01" />
             </div>
             <div className="space-y-2">
-              <Label>ROAS (x)</Label>
+              <Label>{t.content.roas}</Label>
               <Input value={form.roas} onChange={e => setForm(f => ({ ...f, roas: e.target.value }))} placeholder="4.2" type="number" step="0.1" />
             </div>
             <div className="space-y-2 col-span-2">
-              <Label>Notes</Label>
-              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder="Performance notes..." rows={2} />
+              <Label>{t.content.notes}</Label>
+              <Textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} placeholder={t.content.performanceNotes} rows={2} />
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <input
@@ -226,12 +228,12 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
                 onChange={e => setForm(f => ({ ...f, is_winner: e.target.checked }))}
                 className="rounded"
               />
-              <Label htmlFor="winner" className="cursor-pointer">Mark as winning creative</Label>
+              <Label htmlFor="winner" className="cursor-pointer">{t.content.markWinner}</Label>
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving...' : editItem ? 'Update' : 'Add Creative'}</Button>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>{t.common.cancel}</Button>
+            <Button onClick={handleSave} disabled={saving}>{saving ? t.content.saving : editItem ? t.content.updateBtn : t.content.addCreativeBtn}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

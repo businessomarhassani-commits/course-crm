@@ -15,30 +15,32 @@ import { useState } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { useLanguage } from '@/lib/language-context'
 
 interface SidebarProps {
   profile: Profile | null
 }
 
-const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/leads', label: 'Leads', icon: Users },
-  { href: '/sales', label: 'Sales', icon: ShoppingCart },
-  { href: '/payments', label: 'Payments', icon: CreditCard },
-  { href: '/tasks', label: 'Tasks', icon: CheckSquare },
-  { href: '/content', label: 'Content', icon: Megaphone },
-  { href: '/team', label: 'Team', icon: BarChart2, adminOnly: true },
-]
-
 export function Sidebar({ profile }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const { t } = useLanguage()
   const [collapsed, setCollapsed] = useState(false)
+
+  const navItems = [
+    { href: '/dashboard', label: t.nav.dashboard, icon: LayoutDashboard },
+    { href: '/leads', label: t.nav.leads, icon: Users },
+    { href: '/sales', label: t.nav.sales, icon: ShoppingCart },
+    { href: '/payments', label: t.nav.payments, icon: CreditCard },
+    { href: '/tasks', label: t.nav.tasks, icon: CheckSquare },
+    { href: '/content', label: t.nav.content, icon: Megaphone },
+    { href: '/team', label: t.nav.team, icon: BarChart2, adminOnly: true },
+  ]
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()
-    toast.success('Signed out')
+    toast.success(t.nav.signOut)
     router.push('/login')
     router.refresh()
   }
@@ -124,13 +126,14 @@ export function Sidebar({ profile }: SidebarProps) {
               size="icon"
               onClick={handleSignOut}
               className="h-7 w-7 text-muted-foreground hover:text-foreground flex-shrink-0"
+              title={t.nav.signOut}
             >
               <LogOut className="w-3.5 h-3.5" />
             </Button>
           )}
         </div>
         {collapsed && (
-          <button onClick={handleSignOut} className="mt-2 w-full flex justify-center text-muted-foreground hover:text-foreground" title="Sign out">
+          <button onClick={handleSignOut} className="mt-2 w-full flex justify-center text-muted-foreground hover:text-foreground" title={t.nav.signOut}>
             <LogOut className="w-4 h-4" />
           </button>
         )}

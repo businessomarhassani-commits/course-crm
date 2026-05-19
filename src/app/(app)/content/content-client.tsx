@@ -13,19 +13,20 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Plus, Star, Search, Trophy } from 'lucide-react'
+import { Plus, Star, Search, Trophy, Users } from 'lucide-react'
 import { useLanguage } from '@/lib/language-context'
 
 const PLATFORMS = ['Instagram', 'Facebook', 'YouTube', 'TikTok', 'Google Ads', 'Email', 'Other']
 
 interface Props {
   initialContent: ContentTracking[]
+  leadCounts: Record<string, number>
   currentUserId: string
 }
 
 const emptyForm = { name: '', platform: '', ctr: '', cpl: '', roas: '', notes: '', is_winner: false }
 
-export function ContentClient({ initialContent, currentUserId }: Props) {
+export function ContentClient({ initialContent, leadCounts, currentUserId }: Props) {
   const supabase = createClient()
   const { t } = useLanguage()
   const [content, setContent] = useState(initialContent)
@@ -165,7 +166,7 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
                   </Button>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3 py-3 border-y border-border">
+                <div className="grid grid-cols-4 gap-2 py-3 border-y border-border">
                   <div className="text-center">
                     <p className="text-sm font-bold text-blue-400">{item.ctr != null ? `${item.ctr}%` : '—'}</p>
                     <p className="text-xs text-muted-foreground">{t.content.ctr}</p>
@@ -177,6 +178,12 @@ export function ContentClient({ initialContent, currentUserId }: Props) {
                   <div className="text-center">
                     <p className="text-sm font-bold text-green-400">{item.roas != null ? `${item.roas}x` : '—'}</p>
                     <p className="text-xs text-muted-foreground">{t.content.roas}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-bold text-purple-400 flex items-center justify-center gap-0.5">
+                      <Users className="w-3 h-3" />{leadCounts[item.id] ?? 0}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{t.content.leadsGenerated}</p>
                   </div>
                 </div>
 

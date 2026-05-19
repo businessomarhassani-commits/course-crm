@@ -12,6 +12,8 @@ export type LeadStatus =
 
 export type PaymentStatus = 'Pending' | 'Confirmed' | 'Refunded'
 
+export type StudentStatus = 'Active' | 'Completed' | 'Refunded'
+
 export interface Profile {
   id: string
   email: string
@@ -35,6 +37,7 @@ export interface Lead {
   interested_offer: string | null
   budget: number | null
   country: string | null
+  ad_creative_id: string | null
   created_by: string | null
   created_at: string
   updated_at: string
@@ -120,5 +123,21 @@ export interface Notification {
   title: string
   message: string | null
   read: boolean
+  created_at: string
+}
+
+export interface Student {
+  id: string
+  full_name: string
+  email: string | null
+  phone: string | null
+  amount_paid: number
+  payment_method: string | null
+  proof_url: string | null
+  enrollment_date: string | null
+  status: StudentStatus
+  notes: string | null
+  attendance: Record<string, boolean>
+  created_by: string | null
   created_at: string
 }

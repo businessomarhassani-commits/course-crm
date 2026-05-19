@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { Inter } from 'next/font/google'
 import './globals.css'
 import { ThemeProvider } from '@/components/providers/theme-provider'
 import { LanguageProvider } from '@/lib/language-context'
 import { Toaster } from 'sonner'
 
-const geist = Geist({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-geist',
+  variable: '--font-inter',
 })
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={geist.variable}>
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider
           attribute="class"

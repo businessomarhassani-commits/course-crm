@@ -32,17 +32,18 @@ const PAGE_SIZE = 20
 interface LeadsClientProps {
   initialLeads: Lead[]
   profiles: Pick<Profile, 'id' | 'full_name' | 'role' | 'email'>[]
+  creatives: { id: string; name: string; platform: string | null }[]
   currentUserId: string
   currentUserRole: string
 }
 
 const emptyForm = {
-  full_name: '', phone: '', email: '', instagram: '', facebook: '',
+  full_name: '', phone: '+212', email: '', instagram: '', facebook: '',
   lead_source: '', assigned_to: '', status: 'New' as LeadStatus,
-  notes: '', interested_offer: '', budget: '', country: '',
+  notes: '', interested_offer: '', budget: '', country: '', ad_creative_id: '',
 }
 
-export function LeadsClient({ initialLeads, profiles, currentUserId, currentUserRole }: LeadsClientProps) {
+export function LeadsClient({ initialLeads, profiles, creatives, currentUserId, currentUserRole }: LeadsClientProps) {
   const supabase = createClient()
   const { t } = useLanguage()
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
@@ -82,7 +83,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
     setEditLead(lead)
     setForm({
       full_name: lead.full_name,
-      phone: lead.phone ?? '',
+      phone: lead.phone ?? '+212',
       email: lead.email ?? '',
       instagram: lead.instagram ?? '',
       facebook: lead.facebook ?? '',
@@ -93,6 +94,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
       interested_offer: lead.interested_offer ?? '',
       budget: lead.budget?.toString() ?? '',
       country: lead.country ?? '',
+      ad_creative_id: lead.ad_creative_id ?? '',
     })
     setModalOpen(true)
   }
@@ -104,6 +106,7 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
       ...form,
       budget: form.budget ? parseFloat(form.budget) : null,
       assigned_to: form.assigned_to || null,
+      ad_creative_id: form.ad_creative_id || null,
       created_by: currentUserId,
     }
 
@@ -347,6 +350,18 @@ export function LeadsClient({ initialLeads, profiles, currentUserId, currentUser
               <Label>{t.leads.budget}</Label>
               <Input value={form.budget} onChange={e => setForm(f => ({ ...f, budget: e.target.value }))} placeholder="500" type="number" />
             </div>
+            {creatives.length > 0 && (
+              <div className="space-y-2 col-span-2">
+                <Label>{t.leads.adCreative}</Label>
+                <Select value={form.ad_creative_id} onValueChange={v => setForm(f => ({ ...f, ad_creative_id: v ?? '' }))}>
+                  <SelectTrigger><SelectValue placeholder={t.leads.selectCreative} /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">{t.leads.noCreative}</SelectItem>
+                    {creatives.map(c => <SelectItem key={c.id} value={c.id}>{c.name}{c.platform ? ` — ${c.platform}` : ''}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             {(currentUserRole === 'admin' || currentUserRole === 'partner') && (
               <div className="space-y-2 col-span-2">
                 <Label>{t.leads.assignTo}</Label>

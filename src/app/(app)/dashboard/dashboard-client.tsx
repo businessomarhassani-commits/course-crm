@@ -23,25 +23,28 @@ interface DashboardClientProps {
     totalSales: number
     conversionRate: number
     pendingFollowups: number
+    totalStudents: number
   }
   dailySales: { date: string; revenue: number }[]
   sourcePieData: { name: string; value: number }[]
   statusBarData: { name: string; value: number }[]
+  topCreativesData: { name: string; value: number }[]
   recentActivities: Array<{ id: string; type: string; description: string; created_at: string; user?: { full_name: string } | null }>
   recentSales: Array<{ id: string; customer_name: string; offer: string; amount: number; created_at: string; closer?: { full_name: string } | null }>
 }
 
 export function DashboardClient({
-  stats, dailySales, sourcePieData, statusBarData, recentActivities, recentSales
+  stats, dailySales, sourcePieData, statusBarData, topCreativesData, recentActivities, recentSales
 }: DashboardClientProps) {
   const { t } = useLanguage()
 
   const statCards = [
-    { title: t.dashboard.totalLeads, value: stats.totalLeads.toString(), icon: Users, change: '+12%', color: 'text-blue-400', href: '/leads' },
-    { title: t.dashboard.totalRevenue, value: formatCurrency(stats.totalRevenue), icon: DollarSign, change: '+8%', color: 'text-green-400', href: '/sales' },
-    { title: t.dashboard.totalSales, value: stats.totalSales.toString(), icon: ShoppingCart, change: '+5%', color: 'text-purple-400', href: '/sales' },
-    { title: t.dashboard.conversionRate, value: `${stats.conversionRate}%`, icon: TrendingUp, change: '+2%', color: 'text-yellow-400', href: '/leads' },
+    { title: t.dashboard.totalLeads, value: stats.totalLeads.toString(), icon: Users, change: '', color: 'text-blue-400', href: '/leads' },
+    { title: t.dashboard.totalRevenue, value: formatCurrency(stats.totalRevenue), icon: DollarSign, change: '', color: 'text-green-400', href: '/sales' },
+    { title: t.dashboard.totalSales, value: stats.totalSales.toString(), icon: ShoppingCart, change: '', color: 'text-purple-400', href: '/sales' },
+    { title: t.dashboard.conversionRate, value: `${stats.conversionRate}%`, icon: TrendingUp, change: '', color: 'text-yellow-400', href: '/leads' },
     { title: t.dashboard.pendingFollowups, value: stats.pendingFollowups.toString(), icon: AlertCircle, change: '', color: 'text-orange-400', href: '/tasks' },
+    { title: t.dashboard.studentsTotal, value: stats.totalStudents.toString(), icon: Users, change: '', color: 'text-pink-400', href: '/students' },
   ]
 
   return (
@@ -52,7 +55,7 @@ export function DashboardClient({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
         {statCards.map(card => {
           const Icon = card.icon
           return (
@@ -151,6 +154,26 @@ export function DashboardClient({
             )}
           </CardContent>
         </Card>
+
+        {/* Top Ad Creatives */}
+        {topCreativesData.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium">{t.dashboard.topCreatives}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={200}>
+                <BarChart data={topCreativesData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis type="number" tick={{ fontSize: 11 }} stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+                  <YAxis type="category" dataKey="name" tick={{ fontSize: 10 }} width={90} stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: '8px', fontSize: 12 }} />
+                  <Bar dataKey="value" fill="#635bff" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Recent Sales */}
         <Card>

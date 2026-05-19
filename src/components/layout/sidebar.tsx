@@ -9,7 +9,7 @@ import { Profile } from '@/types'
 import {
   LayoutDashboard, Users, ShoppingCart, CreditCard, CheckSquare,
   BarChart2, BookOpen, LogOut, ChevronLeft, ChevronRight,
-  Megaphone
+  Megaphone, Kanban, GraduationCap
 } from 'lucide-react'
 import { useState } from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -31,7 +31,9 @@ export function Sidebar({ profile }: SidebarProps) {
   const navItems = [
     { href: '/dashboard', label: t.nav.dashboard, icon: LayoutDashboard },
     { href: '/leads', label: t.nav.leads, icon: Users },
+    { href: '/pipeline', label: t.nav.pipeline, icon: Kanban },
     { href: '/sales', label: t.nav.sales, icon: ShoppingCart },
+    { href: '/students', label: t.nav.students, icon: GraduationCap },
     { href: '/payments', label: t.nav.payments, icon: CreditCard },
     { href: '/tasks', label: t.nav.tasks, icon: CheckSquare },
     { href: '/content', label: t.nav.content, icon: Megaphone },
@@ -89,10 +91,10 @@ export function Sidebar({ profile }: SidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all',
+                'flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all relative',
                 active
-                  ? 'bg-primary text-primary-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent',
+                  ? 'text-primary bg-primary/10 before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-primary before:rounded-full'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent/60',
                 collapsed && 'justify-center px-2'
               )}
               title={collapsed ? item.label : undefined}

@@ -13,6 +13,10 @@ export function formatCurrency(amount: number) {
   }).format(amount)
 }
 
+export function formatMAD(amount: number) {
+  return `${new Intl.NumberFormat('fr-MA').format(amount)} MAD`
+}
+
 export function formatDate(date: string) {
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',

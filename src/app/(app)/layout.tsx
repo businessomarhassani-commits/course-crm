@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
+import { QuickActionsFAB } from '@/components/quick-actions-fab'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -20,9 +21,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <Sidebar profile={profile} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Topbar />
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {children}
         </main>
+        <QuickActionsFAB />
       </div>
     </div>
   )

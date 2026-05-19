@@ -6,14 +6,11 @@ import { Profile, Role } from '@/types'
 import { toast } from 'sonner'
 import { formatDate, formatCurrency, getRoleColor } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
+import { Card, CardContent } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Plus, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react'
+import { Copy, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react'
 
 const ROLES: Role[] = ['admin', 'closer', 'partner', 'support']
 
@@ -26,11 +23,6 @@ interface Props {
 export function TeamClient({ profiles: initialProfiles, sales, currentUserId }: Props) {
   const supabase = createClient()
   const [profiles, setProfiles] = useState(initialProfiles)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState('')
-  const [inviteRole, setInviteRole] = useState<Role>('closer')
-  const [inviteName, setInviteName] = useState('')
-  const [saving, setSaving] = useState(false)
 
   const getStats = (userId: string) => {
     const userSales = sales.filter(s => s.closer_id === userId && !s.refund_status)
@@ -47,26 +39,13 @@ export function TeamClient({ profiles: initialProfiles, sales, currentUserId }: 
     }
   }
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) { toast.error('Email is required'); return }
-    setSaving(true)
-
-    // Use Supabase admin to invite user
-    const res = await fetch('/api/invite', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: inviteEmail, role: inviteRole, full_name: inviteName }),
+  const copySignupLink = () => {
+    const link = `${window.location.origin}/signup`
+    navigator.clipboard.writeText(link).then(() => {
+      toast.success('Signup link copied to clipboard')
+    }).catch(() => {
+      toast.error('Failed to copy link')
     })
-    const result = await res.json()
-
-    if (!res.ok) { toast.error(result.error || 'Failed to invite user') } else {
-      toast.success(`Invitation sent to ${inviteEmail}`)
-      setModalOpen(false)
-      setInviteEmail('')
-      setInviteName('')
-      setInviteRole('closer')
-    }
-    setSaving(false)
   }
 
   const totalRevenue = sales.filter(s => !s.refund_status).reduce((sum, s) => sum + s.amount, 0)
@@ -78,8 +57,8 @@ export function TeamClient({ profiles: initialProfiles, sales, currentUserId }: 
           <h1 className="text-2xl font-bold tracking-tight">Team</h1>
           <p className="text-muted-foreground text-sm mt-1">{profiles.length} members</p>
         </div>
-        <Button size="sm" onClick={() => setModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />Invite Member
+        <Button size="sm" variant="outline" onClick={copySignupLink}>
+          <Copy className="w-4 h-4 mr-2" />Copy Signup Link
         </Button>
       </div>
 
@@ -136,7 +115,7 @@ export function TeamClient({ profiles: initialProfiles, sales, currentUserId }: 
                     <p className="text-xs text-muted-foreground">Sales</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-lg font-bold text-green-400">{formatCurrency(stats.revenue).replace('$', '$')}</p>
+                    <p className="text-lg font-bold text-green-400">{formatCurrency(stats.revenue)}</p>
                     <p className="text-xs text-muted-foreground">Revenue</p>
                   </div>
                   <div className="text-center">
@@ -151,34 +130,6 @@ export function TeamClient({ profiles: initialProfiles, sales, currentUserId }: 
           )
         })}
       </div>
-
-      {/* Invite Modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader><DialogTitle>Invite Team Member</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>Full Name</Label>
-              <Input value={inviteName} onChange={e => setInviteName(e.target.value)} placeholder="John Doe" />
-            </div>
-            <div className="space-y-2">
-              <Label>Email *</Label>
-              <Input value={inviteEmail} onChange={e => setInviteEmail(e.target.value)} placeholder="john@company.com" type="email" />
-            </div>
-            <div className="space-y-2">
-              <Label>Role</Label>
-              <Select value={inviteRole} onValueChange={v => setInviteRole(v as Role)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{ROLES.map(r => <SelectItem key={r} value={r} className="capitalize">{r}</SelectItem>)}</SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleInvite} disabled={saving}>{saving ? 'Sending...' : 'Send Invite'}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

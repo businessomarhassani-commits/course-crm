@@ -10,31 +10,44 @@ import { toast } from 'sonner'
 import { BookOpen, Eye, EyeOff, Loader2 } from 'lucide-react'
 import Link from 'next/link'
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter()
   const supabase = createClient()
+  const [fullName, setFullName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!fullName.trim()) { toast.error('Full name is required'); return }
+    if (password.length < 8) { toast.error('Password must be at least 8 characters'); return }
+
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName.trim() },
+      },
+    })
+
     if (error) {
       toast.error(error.message)
     } else {
-      toast.success('Welcome back!')
-      router.push('/dashboard')
-      router.refresh()
+      toast.success('Account created! Signing you in...')
+      // Sign in immediately after signup
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password })
+      if (signInError) {
+        toast.error('Account created — please sign in.')
+        router.push('/login')
+      } else {
+        router.push('/dashboard')
+        router.refresh()
+      }
     }
     setLoading(false)
-  }
-
-  const fillDemo = () => {
-    setEmail('demo@coursecrm.com')
-    setPassword('demo123456')
   }
 
   return (
@@ -45,13 +58,27 @@ export default function LoginPage() {
           <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20">
             <BookOpen className="w-7 h-7 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">Course CRM</h1>
-          <p className="text-muted-foreground text-sm">Sign in to your workspace</p>
+          <h1 className="text-2xl font-bold tracking-tight">Create your account</h1>
+          <p className="text-muted-foreground text-sm">Join the team workspace</p>
         </div>
 
         {/* Form */}
         <div className="bg-card border border-border rounded-2xl p-8 shadow-xl shadow-black/10">
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleSignup} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Full Name</Label>
+              <Input
+                id="fullName"
+                type="text"
+                placeholder="John Doe"
+                value={fullName}
+                onChange={e => setFullName(e.target.value)}
+                required
+                className="h-11"
+                autoFocus
+              />
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -71,10 +98,11 @@ export default function LoginPage() {
                 <Input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
+                  placeholder="At least 8 characters"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
                   required
+                  minLength={8}
                   className="h-11 pr-10"
                 />
                 <button
@@ -88,35 +116,24 @@ export default function LoginPage() {
             </div>
 
             <Button type="submit" className="w-full h-11" disabled={loading}>
-              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {loading ? 'Signing in...' : 'Sign in'}
+              {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              {loading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-primary hover:underline font-medium">
-            Sign up
+          Already have an account?{' '}
+          <Link href="/login" className="text-primary hover:underline font-medium">
+            Sign in
           </Link>
         </p>
 
-        {/* Demo credentials */}
-        <div className="bg-muted/50 border border-border rounded-xl p-4 space-y-3">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Demo Credentials</p>
-          <div className="space-y-1 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Email</span>
-              <span className="font-mono text-foreground">demo@coursecrm.com</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Password</span>
-              <span className="font-mono text-foreground">demo123456</span>
-            </div>
-          </div>
-          <Button variant="outline" size="sm" className="w-full" onClick={fillDemo}>
-            Use demo credentials
-          </Button>
+        <div className="bg-muted/50 border border-border rounded-xl p-4">
+          <p className="text-xs text-muted-foreground text-center">
+            New accounts are assigned the <span className="font-medium text-foreground">Closer</span> role by default.
+            An admin can change your role from the Team page.
+          </p>
         </div>
       </div>
     </div>
